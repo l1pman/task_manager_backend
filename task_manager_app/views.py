@@ -1,5 +1,7 @@
 from django.shortcuts import render
 from rest_framework import generics
+from rest_framework.permissions import IsAuthenticated
+
 from .models import *
 from .permissions import IsOwner
 from .serializers import *
@@ -11,17 +13,19 @@ class ProjectList(generics.ListCreateAPIView):
         queryset = Project.objects.filter(owner=self.request.user)
         return queryset
     serializer_class = ProjectSerializer
-    permission_classes = (IsOwner,)
-
+    permission_classes = (IsOwner,IsAuthenticated)
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
 
 class ProjectDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
-    permission_classes = (IsOwner,)
+    permission_classes = (IsOwner,IsAuthenticated)
 
 
 class BoardList(generics.ListCreateAPIView):
     serializer_class = BoardSerializer
+    permission_classes = (IsOwner,IsAuthenticated)
 
     def get_queryset(self):
         project_id = self.kwargs['project_id']
@@ -36,7 +40,7 @@ class BoardList(generics.ListCreateAPIView):
 
 class BoardDetail(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = BoardSerializer
-
+    permission_classes = (IsOwner,IsAuthenticated)
     def get_queryset(self):
         project_id = self.kwargs['project_id']
         queryset = Board.objects.filter(project__id=project_id, project__owner=self.request.user)
@@ -45,10 +49,12 @@ class BoardDetail(generics.RetrieveUpdateDestroyAPIView):
 
 class TaskList(generics.ListCreateAPIView):
     serializer_class = TaskSerializer
+    permission_classes = (IsOwner,IsAuthenticated)
 
     def get_queryset(self):
         board_id = self.kwargs['board_id']
-        queryset = Task.objects.filter(board__id=board_id, board__project__owner=self.request.user)
+        project_id = self.kwargs['project_id']
+        queryset = Task.objects.filter(board__id=board_id, board__project__owner=self.request.user, board__project__id=project_id)
         return queryset
 
     def perform_create(self, serializer):
@@ -59,8 +65,26 @@ class TaskList(generics.ListCreateAPIView):
 
 class TaskDetail(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = TaskSerializer
+    permission_classes = (IsOwner,IsAuthenticated)
 
     def get_queryset(self):
         board_id = self.kwargs['board_id']
         queryset = Task.objects.filter(board__id=board_id)
         return queryset
+
+
+class BoardListAll(generics.ListAPIView):
+    def get_queryset(self):
+        queryset = Board.objects.filter(project__owner=self.request.user)
+        return queryset
+    serializer_class = BoardSerializer
+    permission_classes = (IsOwner,IsAuthenticated)
+
+
+class TaskListAll(generics.ListAPIView):
+    def get_queryset(self):
+        queryset = Task.objects.filter(board__project__owner=self.request.user)
+        return queryset
+    serializer_class = TaskSerializer
+    permission_classes = (IsOwner,IsAuthenticated)
+
