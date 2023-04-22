@@ -2,6 +2,7 @@ from django.shortcuts import render
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 
+
 from .models import *
 from .permissions import IsOwner
 from .serializers import *
@@ -21,7 +22,7 @@ class ProjectDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
     permission_classes = (IsOwner,IsAuthenticated)
-
+    http_method_names = ['get', 'patch', 'delete']
 
 class BoardList(generics.ListCreateAPIView):
     serializer_class = BoardSerializer
@@ -41,6 +42,8 @@ class BoardList(generics.ListCreateAPIView):
 class BoardDetail(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = BoardSerializer
     permission_classes = (IsOwner,IsAuthenticated)
+    http_method_names = ['get', 'patch', 'delete']
+
     def get_queryset(self):
         project_id = self.kwargs['project_id']
         queryset = Board.objects.filter(project__id=project_id, project__owner=self.request.user)
@@ -66,7 +69,7 @@ class TaskList(generics.ListCreateAPIView):
 class TaskDetail(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = TaskSerializer
     permission_classes = (IsOwner,IsAuthenticated)
-
+    http_method_names = ['get', 'patch', 'delete']
     def get_queryset(self):
         board_id = self.kwargs['board_id']
         queryset = Task.objects.filter(board__id=board_id)
